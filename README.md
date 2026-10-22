@@ -1,17 +1,15 @@
-# 🦉 Strixlibe × Google Colab 高速GPU LLM Server
+# 🦉 Strixlibe × Google Colab GPU LLM Server (Ollama 版)
 
-Google Colab（**L4 / T4 / G4 GPU**）上で、実測 2〜5 分（10分以内）で高速起動するオープンソース LLM（`DeepSeek-R1-32B/14B AWQ`、`Qwen2.5-Coder-32B/14B AWQ` 等）を自律ホストし、自律ペンテストエージェント「Strixlibe」と完全自動同期するプロジェクトです。
+Google Colab（**T4 / L4 / G4 GPU**）上で、Python/CUDAのメモリ衝突や依存関係エラーを起こさない **Ollama** を使って、オープンソース LLM（`DeepSeek-R1 14B/32B`、`Qwen2.5-Coder 14B/7B` 等）を自律ホストし、自律ペンテストエージェント「Strixlibe」と完全自動同期するプロジェクトです。
 
 ---
 
-## ⚡ 高速ロード & 省CU設計（実測 2〜5分で起動）
+## ⚡ Ollama 方式の圧倒的なメリット
 
-- **4bit AWQ 量子化**: 精度劣化 1% 未満のままファイルサイズを 8.5GB〜19GB に圧縮。ダウンロードが数分で完了し、10分以内の起動を確実に達成します。
-- **適したGPUの選択**:
-  - **L4 GPU (24GB)**: 32B AWQ（約19GB）に最適。CU消費は約 2.5〜3.0 CU/h（月35〜40時間稼働可能）。
-  - **T4 GPU (16GB)**: 14B AWQ（約8.5GB）に最適。CU消費は約 1.5〜2.0 CU/h（月50〜65時間稼働可能）。
-- **セーフティガードレール（検閲）の回避**: 商用APIで拒否されがちな攻撃コードやエクスプロイト検証を制約なく実行。
-- **ゼロコンフィグ自動同期**: Colab 起動時は自動で Strixlibe のルーティング先になり、停止時は既存の **OpenCode (Zen)** 設定へ自動フォールバック。
+- **Python/PyTorch 依存ゼロ**: ネイティブ C++ バイナリで動くため、vLLM のような CUDA メモリ初期化エラー（OOM）や Python 3.13 の競合が一切起きません。
+- **ダウンロード進捗が 100% 見える**: `ollama pull` により、パーセント表示（%）とダウンロード速度がリアルタイムで画面に表示されます（1〜2分で完了）。
+- **メモリ安全**: GPU VRAM に合わせて動的にメモリを管理するため、起動時の即死クラッシュが起きません。
+- **完全な OpenAI 互換 API**: `https://<tunnel-url>/v1` で Strixlibe（LiteLLM）や Dispatcher からそのまま利用可能。
 - **CU保護ウォッチドッグ**: スキャン完了後、20分間無通信で `runtime.unassign()` によりインスタンスを自動切断。
 
 ---
@@ -22,10 +20,10 @@ Google Colab（**L4 / T4 / G4 GPU**）上で、実測 2〜5 分（10分以内）
 
 ---
 
-## 📋 選択可能モデル一覧（10分以内ロード保証）
+## 📋 選択可能モデル一覧
 
-1. `casperhansen/deepseek-r1-distill-qwen-32b-awq`（**既定値**: 約19GB、DL 3〜5分。32B 最高峰の推論思考、L4推奨）
-2. `Qwen/Qwen2.5-Coder-32B-Instruct-AWQ`（約19GB、DL 3〜5分。32B コーディング特化、L4推奨）
-3. `casperhansen/deepseek-r1-distill-qwen-14b-awq`（約8.5GB、DL 1〜2分！爆速ロード・推論思考、T4/L4推奨）
-4. `Qwen/Qwen2.5-Coder-14B-Instruct-AWQ`（約8.5GB、DL 1〜2分！爆速ロード・コーディング特化、T4/L4推奨）
-5. `Qwen/Qwen2.5-Coder-7B-Instruct-AWQ`（約5GB、DL 1分未満！最速・T4最安）
+1. `deepseek-r1:14b`（**既定値**: 約9GB、DL約1〜2分。R1推論思考チェーン、T4/L4推奨）
+2. `qwen2.5-coder:14b`（約9GB、DL約1〜2分。コーディング・ペンテスト特化、T4/L4推奨）
+3. `qwen2.5-coder:7b`（約4.7GB、DL約30秒！最速・T4最安）
+4. `deepseek-r1:32b`（約19GB、DL約3〜5分。L4/G4推奨）
+5. `qwen2.5-coder:32b`（約19GB、DL約3〜5分。L4/G4推奨）
