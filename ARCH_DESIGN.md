@@ -1,10 +1,10 @@
-# Strixlibe × Colab LLM アーキテクチャ設計書
+# Strixlibe × Colab G4 LLM アーキテクチャ設計書
 
 ## 1. 全体アーキテクチャ概要
 
 ```
-[Google Colab (A100)]
-  ├── vLLM (Port 8000: DeepSeek-R1-Distill-Qwen-32B-AWQ)
+[Google Colab (G4 GPU: Blackwell 96GB)]
+  ├── vLLM (Port 8000: DeepSeek-R1-32B BF16 / Qwen2.5-72B-AWQ)
   ├── Watchdog (20分無通信で runtime.unassign())
   └── Cloudflare Quick Tunnel (cloudflared)
          │
@@ -16,7 +16,7 @@
 [GCP Cloud Run Dispatcher] ── (ハートビート・セッション保持)
   │
   ├── ジョブ受信時: Colab がアクティブか判定
-  │     ├── [Active]  -> GCE メタデータ: Colab Tunnel URL
+  │     ├── [Active]  -> GCE メタデータ: Colab Tunnel URL (G4 Blackwell)
   │     └── [Offline] -> GCE メタデータ: OpenCode (Zen) 設定
   │
   ▼ Compute Engine API
@@ -35,20 +35,20 @@
 - **リクエストボディ**:
   ```json
   {
-    "provider": "colab-vllm",
+    "provider": "colab-g4-vllm",
     "base_url": "https://xxxx-xx-xx-xx.trycloudflare.com/v1",
-    "model_name": "casperhansen/deepseek-r1-distill-qwen-32b-awq",
+    "model_name": "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
     "env_target": "all",
-    "ttl_minutes": 60
+    "ttl_minutes": 120
   }
   ```
 - **レスポンス**:
   ```json
   {
     "status": "registered",
-    "active_llm": "colab-vllm",
+    "active_llm": "colab-g4-vllm",
     "fallback_llm": "opencode/zen",
-    "expires_at": "2026-10-22T14:30:00Z"
+    "expires_at": "2026-10-22T15:30:00Z"
   }
   ```
 
@@ -64,15 +64,13 @@
   - `LLM_API_BASE` が渡された場合、自動的にホスト名（例: `xxxx.trycloudflare.com`）を抽出し、Port 443 の外部送信を iptables ホワイトリストに追加する処理が実装済み。
 - `gcp-worker/worker_runner.py`:
   - メタデータの `LLM_API_BASE` および `STRIX_LLM` を環境変数として Strix CLI にそのまま渡す処理が実装済み。
-- これにより、Worker VM 側のコード改修は不要で、Dispatcher の設定注入ロジックのみで完全対応可能。
 
 ---
 
 ## 4. CU保護ウォッチドッグ仕様（Colab側）
 
-- vLLM プロキシ側で最後のリクエストタイムスタンプ（`last_request_time`）をメモリ保持。
-- 60秒ごとにバックグラウンドスレッドがチェック。
-- `current_time - last_request_time > 1200`（20分）かつ `idle_count >= 1` の場合：
+- バックグラウンドデーモンスレッドが直近リクエスト時刻を監視。
+- `current_time - last_seen_time > 1200`（20分）の場合：
   1. Dispatcher に `DELETE /api/v1/llm-session` を送信（Colab 終了を通知）。
-  2. Slack に「🛑 アイドリング検出のため Colab を自動切断しました」と通知。
+  2. Slack に「🛑 アイドリング検出のため Colab G4 を自動切断しました」と通知。
   3. `from google.colab import runtime; runtime.unassign()` を呼び出し、GPU コンピュートユニットの課金を即時停止。
