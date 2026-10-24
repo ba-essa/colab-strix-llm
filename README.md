@@ -16,7 +16,12 @@ Google Colab（**T4 / L4 / G4 GPU**）上で、Python/CUDAのメモリ衝突や�
 
 ## 🚀 Google Colab で直接開く
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ba-essa/colab-strix-llm/blob/main/colab_strix_llm_server.ipynb)
+### 1. 安定・鉄板版: Ollama サーバー（T4 / L4 推奨、14B〜32B、起動1〜2分）
+[![Open In Colab (Ollama)](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ba-essa/colab-strix-llm/blob/main/colab_strix_llm_server.ipynb)
+
+### 2. 🧠 最新・超高知能版: Strata 125B サーバー（L4 ハイメモリ推奨、Qwen3.8-Flash-Next 125B）
+[![Open In Colab (Strata 125B)](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ba-essa/colab-strix-llm/blob/main/colab_strata_llm_server.ipynb)
+*※「ランタイムのタイプを変更」で「L4 GPU」かつ「ハイメモリ（High-RAM: 約53GB）」を選択してください。*
 
 ---
 
